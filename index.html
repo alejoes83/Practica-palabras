@@ -41,6 +41,15 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-of
 .item .ok{color:#2f8f56;font-size:1.2rem}
 .item .acts{display:flex;gap:6px;width:100%;flex-wrap:wrap}
 .item .acts .btn{flex:1;padding:10px 8px;font-size:.95rem}
+.emo-prev{font-size:4rem;text-align:center;line-height:1.1}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.ov[hidden]{display:none}
+.pkbox{background:var(--card);width:100%;max-width:520px;border-radius:24px 24px 0 0;padding:14px;max-height:75vh;display:flex;flex-direction:column;gap:10px}
+.pktabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.pktabs button{font:inherit;font-size:1rem;border:0;border-radius:14px;padding:10px 14px;background:var(--bg);color:var(--ink);cursor:pointer;white-space:nowrap}
+.pktabs button[aria-pressed="true"]{background:var(--sun);color:#17324d;font-weight:600}
+.pkgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;overflow-y:auto}
+.pkgrid button{font-size:2.2rem;background:var(--bg);border:0;border-radius:14px;padding:8px;cursor:pointer;line-height:1.2}
 @media (prefers-reduced-motion:reduce){.rec.on{animation:none}}
 </style>
 </head>
@@ -72,7 +81,9 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-of
       <h2>Agregar palabra</h2>
       <input type="text" id="nw" placeholder="Escriba la palabra" autocomplete="off" aria-label="Palabra nueva">
       <img class="prev" id="nwPrev" alt="" hidden>
+      <div class="emo-prev" id="nwEmo" hidden></div>
       <button class="btn" id="nwPhoto" style="background:var(--blue)">📷 Foto (cámara o galería)</button>
+      <button class="btn" id="nwEmoji" style="background:#6b5bd6">😀 Elegir dibujo (si no hay foto)</button>
       <button class="btn" id="nwRec" style="background:#d4503f">🎤 Grabar mi voz</button>
       <div class="hint" id="nwVoice"></div>
       <button class="btn" id="nwSave" style="background:#2f8f56;font-size:1.2rem">Guardar palabra</button>
@@ -82,6 +93,13 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-of
     <div id="list"></div>
   </section>
 </main>
+<div class="ov" id="pk" hidden>
+  <div class="pkbox" role="dialog" aria-label="Elegir dibujo">
+    <div class="pktabs" id="pkTabs"></div>
+    <div class="pkgrid" id="pkGrid"></div>
+    <button class="btn" id="pkClose" style="background:#7a8794">Cerrar</button>
+  </div>
+</div>
 <input type="file" id="file" accept="image/*" hidden>
 <script>
 var DEF=[{id:'mamá',w:'mamá',e:'👩'},{id:'papá',w:'papá',e:'👨'},{id:'dame',w:'dame',e:'🤲'},{id:'ayuda',w:'ayuda',e:'🙋'}];
@@ -93,7 +111,7 @@ var words;
 try{words=JSON.parse(load('palabras')||'null')}catch(e){words=null}
 if(!words||!words.length)words=DEF.slice();
 function saveWords(){return save('palabras',JSON.stringify(words))}
-var i=0,stars=0,attempt={},recorder=null,nwPhoto=null,nwVoice=null,photoTarget=null;
+var i=0,stars=0,attempt={},recorder=null,nwPhoto=null,nwVoice=null,photoTarget=null,nwEmoji=null,nwManual=false;
 function say(t){$('msg').textContent=t}
 function speak(x){
   var d=load('voz:'+x.id);
@@ -158,7 +176,7 @@ $('file').onchange=function(e){
   var f=e.target.files[0];e.target.value='';if(!f)return;
   resize(f,function(d){
     if(!d){$('nwMsg').textContent='No se pudo leer la foto.';return}
-    if(photoTarget==='new'){nwPhoto=d;$('nwPrev').src=d;$('nwPrev').hidden=false}
+    if(photoTarget==='new'){nwPhoto=d;$('nwPrev').src=d;updPrev()}
     else{
       var x=words.filter(function(w){return w.id===photoTarget})[0];
       if(x){var old=x.photo;x.photo=d;if(!saveWords()){x.photo=old;$('nwMsg').textContent='No hay espacio para la foto. Borre alguna palabra.'}renderList()}
@@ -175,15 +193,49 @@ $('nwRec').onclick=function(){
 $('nwSave').onclick=function(){
   var t=$('nw').value.trim();
   if(!t){$('nwMsg').textContent='Escriba la palabra primero.';return}
-  var x={id:'w'+Date.now(),w:t,e:'🔤',photo:nwPhoto||null};
+  var x={id:'w'+Date.now(),w:t,e:nwEmoji||DICT[norm(t)]||'🔤',photo:nwPhoto||null};
   words.push(x);
   if(!saveWords()||(nwVoice&&!save('voz:'+x.id,nwVoice))){
     words.pop();del('voz:'+x.id);saveWords();
     $('nwMsg').textContent='No hay espacio. Borre alguna palabra o foto.';return;
   }
-  $('nw').value='';nwPhoto=null;nwVoice=null;$('nwPrev').hidden=true;$('nwVoice').textContent='';
+  $('nw').value='';nwPhoto=null;nwVoice=null;nwEmoji=null;nwManual=false;updPrev();$('nwVoice').textContent='';
   $('nwMsg').textContent='✓ Palabra guardada';renderList();
 };
+var EMO={
+'Familia':['👩','👨','👧','👦','👶','👵','👴','👪','🧑','🤱'],
+'Animales':['🐶','🐱','🐭','🐹','🐰','🐻','🐼','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐥','🦆','🐴','🐢','🐟','🐠','🐘','🦒','🐑','🐍','🦋','🐝','🐞','🦜'],
+'Comida':['💧','🥛','🧃','☕','🍎','🍌','🍇','🍓','🍊','🍉','🍐','🍍','🥕','🍞','🧀','🥚','🍪','🍚','🍝','🍕','🍔','🍗','🍦','🍫','🥣','🥑','🌽','🥔'],
+'Cosas':['🛏️','🚪','🪑','🛋️','🪟','💡','📺','📱','🧸','⚽','🎈','🚗','🚌','🚲','✏️','📖','🥄','🍴','🥤','🪥','🧼','🚽','🛁','👕','👟','🧦','🧢','🎒','🔑','⏰','☂️','🎵'],
+'Cuerpo y acciones':['👀','👂','👃','👄','🖐️','🦶','🦷','👋','🤲','🙋','👍','🙏','🙅','😴','🏃','🍽️','🚿','😊','😢','😮','🤗','🥱']
+};
+var DICT={'mama':'👩','papa':'👨','abuela':'👵','abuelo':'👴','bebe':'👶','hermano':'👦','hermana':'👧','nino':'👦','nina':'👧','perro':'🐶','gato':'🐱','pato':'🦆','vaca':'🐮','caballo':'🐴','pez':'🐟','pajaro':'🐥','pollito':'🐥','oveja':'🐑','mariposa':'🦋','elefante':'🐘','agua':'💧','leche':'🥛','pan':'🍞','manzana':'🍎','banano':'🍌','banana':'🍌','platano':'🍌','uva':'🍇','fresa':'🍓','naranja':'🍊','galleta':'🍪','huevo':'🥚','queso':'🧀','helado':'🍦','jugo':'🧃','sopa':'🥣','arroz':'🍚','carro':'🚗','bus':'🚌','bici':'🚲','pelota':'⚽','balon':'⚽','globo':'🎈','peluche':'🧸','osito':'🧸','cama':'🛏️','silla':'🪑','puerta':'🚪','luz':'💡','tele':'📺','celular':'📱','zapato':'👟','zapatos':'👟','medias':'🧦','gorra':'🧢','camisa':'👕','libro':'📖','lapiz':'✏️','cuchara':'🥄','ojos':'👀','nariz':'👃','boca':'👄','mano':'🖐️','pie':'🦶','oreja':'👂','hola':'👋','dame':'🤲','ayuda':'🙋','dormir':'😴','sueno':'😴','bano':'🚽','banar':'🛁','no':'🙅','si':'👍','gracias':'🙏','comer':'🍽️','mochila':'🎒','llave':'🔑','reloj':'⏰'};
+function norm(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim()}
+function updPrev(){
+  var im=$('nwPrev'),em=$('nwEmo');
+  if(nwPhoto){im.hidden=false;em.hidden=true}
+  else{im.hidden=true;em.hidden=!nwEmoji;em.textContent=nwEmoji||''}
+}
+function closePicker(){$('pk').hidden=true}
+function openPicker(cb){
+  var tabs=$('pkTabs'),grid=$('pkGrid'),names=Object.keys(EMO);
+  function cat(n){
+    Array.prototype.forEach.call(tabs.children,function(b){b.setAttribute('aria-pressed',b.textContent===n)});
+    grid.innerHTML='';
+    EMO[n].forEach(function(e){
+      var b=document.createElement('button');b.textContent=e;b.setAttribute('aria-label','Dibujo '+e);
+      b.onclick=function(){closePicker();cb(e)};grid.appendChild(b);
+    });
+    grid.scrollTop=0;
+  }
+  tabs.innerHTML='';
+  names.forEach(function(n){var b=document.createElement('button');b.textContent=n;b.onclick=function(){cat(n)};tabs.appendChild(b)});
+  cat(names[0]);$('pk').hidden=false;
+}
+$('pkClose').onclick=closePicker;
+$('pk').onclick=function(e){if(e.target===this)closePicker()};
+$('nw').oninput=function(){if(nwManual)return;nwEmoji=DICT[norm(this.value)]||null;updPrev()};
+$('nwEmoji').onclick=function(){openPicker(function(e){nwEmoji=e;nwManual=true;updPrev()})};
 function renderList(){
   var box=$('list');box.innerHTML='';
   words.forEach(function(x){
@@ -202,6 +254,7 @@ function renderList(){
       function(){b.textContent='Parar'},function(m){b.textContent='Voz';$('nwMsg').textContent=m});
     });
     mk('Foto','#6b5bd6',function(){photoTarget=x.id;$('file').click()});
+    mk('Dibujo','#8a6bd6',function(){openPicker(function(e){x.e=e;if(!saveWords())$('nwMsg').textContent='No hay espacio para guardar el cambio.';renderList()})});
     mk('Borrar','#7a8794',function(){
       if(!confirm('¿Borrar "'+x.w+'"?'))return;
       words=words.filter(function(w){return w.id!==x.id});del('voz:'+x.id);
