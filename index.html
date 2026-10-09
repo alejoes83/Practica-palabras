@@ -6,10 +6,9 @@
 <title>Practica palabras</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#dff1fb;--card:#fff;--ink:#17324d;--sun:#ffc93c;--rec:#ef6f5e;--ok:#3fae6a;--mut:#5d7790;
-box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10243a;--card:#1b3652;--ink:#f2f7fb;--mut:#a9c0d6}}
-:root[data-theme="dark"]{--bg:#10243a;--card:#1b3652;--ink:#f2f7fb;--mut:#a9c0d6}
+:root{--bg:#dff1fb;--card:#fff;--ink:#17324d;--sun:#ffc93c;--rec:#ef6f5e;--ok:#3fae6a;--mut:#5d7790;--red:#d62828;--blue:#2f7fd1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10243a;--card:#1b3652;--ink:#f2f7fb;--mut:#a9c0d6;--red:#ff6b6b}}
+:root[data-theme="dark"]{--bg:#10243a;--card:#1b3652;--ink:#f2f7fb;--mut:#a9c0d6;--red:#ff6b6b}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Fredoka','Trebuchet MS',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
 .tabs{display:flex;gap:8px;padding:14px;width:100%;max-width:520px}
@@ -18,11 +17,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Fredoka','Trebu
 main{width:100%;max-width:520px;padding:0 14px 28px}
 .card{background:var(--card);border-radius:28px;padding:22px 18px;text-align:center}
 .emoji{font-size:clamp(5rem,28vw,8rem);line-height:1.1}
-.word{font-size:clamp(2.6rem,14vw,4.2rem);font-weight:600;margin:4px 0 14px}
+.photo{width:100%;max-width:340px;aspect-ratio:1/1;object-fit:cover;border-radius:22px;display:block;margin:0 auto}
+.word{font-size:clamp(2.6rem,14vw,4.2rem);font-weight:600;margin:8px 0 14px;color:var(--red)}
 .row{display:flex;flex-direction:column;gap:12px}
 .big{font:inherit;font-size:1.4rem;padding:18px;border:0;border-radius:22px;cursor:pointer;color:#fff;font-weight:600}
-.big:focus-visible,.tabs button:focus-visible,.nav button:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
-.listen{background:#2f7fd1}.rec{background:var(--rec)}.mine{background:var(--ok)}
+button:focus-visible,input:focus-visible{outline:4px solid var(--ink);outline-offset:3px}
+.listen{background:var(--blue)}.rec{background:#d4503f}.mine{background:#2f8f56}
 .rec.on{animation:pulse 1s infinite}
 @keyframes pulse{50%{transform:scale(1.03)}}
 .nav{display:flex;justify-content:space-between;margin-top:16px}
@@ -30,22 +30,29 @@ main{width:100%;max-width:520px;padding:0 14px 28px}
 .stars{margin-top:14px;font-size:1.6rem;min-height:2.2rem}
 .msg{margin-top:10px;color:var(--mut);font-size:1rem;min-height:1.4rem}
 .hint{color:var(--mut);margin:0 0 12px;font-size:1rem}
-.fam{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:20px;padding:12px 14px;margin-bottom:10px}
-.fam .t{flex:1;font-size:1.4rem;text-align:left;font-weight:600}
-.fam button{font:inherit;border:0;border-radius:14px;padding:10px 14px;cursor:pointer;color:#fff}
-.fam .ok{color:var(--ok);font-size:1.3rem}
+.form{background:var(--card);border-radius:24px;padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px}
+.form h2{margin:0;font-size:1.3rem}
+.form input[type=text]{font:inherit;font-size:1.3rem;padding:12px;border-radius:14px;border:2px solid var(--mut);background:var(--bg);color:var(--ink)}
+.form .prev{width:120px;height:120px;object-fit:cover;border-radius:16px;align-self:center}
+.btn{font:inherit;border:0;border-radius:14px;padding:12px 14px;cursor:pointer;color:#fff;font-size:1.05rem}
+.item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:20px;padding:10px;margin-bottom:10px;flex-wrap:wrap}
+.item .th{width:56px;height:56px;border-radius:12px;object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-size:2rem;background:var(--bg)}
+.item .t{flex:1;font-size:1.3rem;font-weight:600;min-width:80px;color:var(--red)}
+.item .ok{color:#2f8f56;font-size:1.2rem}
+.item .acts{display:flex;gap:6px;width:100%;flex-wrap:wrap}
+.item .acts .btn{flex:1;padding:10px 8px;font-size:.95rem}
 @media (prefers-reduced-motion:reduce){.rec.on{animation:none}}
 </style>
 </head>
 <body>
 <div class="tabs" role="tablist">
   <button id="tPlay" aria-pressed="true">Jugar</button>
-  <button id="tFam" aria-pressed="false">Voz de mamá o papá</button>
+  <button id="tMng" aria-pressed="false">Palabras</button>
 </div>
 <main>
   <section id="play">
     <div class="card">
-      <div class="emoji" id="emoji"></div>
+      <div id="pic"></div>
       <div class="word" id="word"></div>
       <div class="row">
         <button class="big listen" id="bListen">Escuchar</button>
@@ -60,26 +67,42 @@ main{width:100%;max-width:520px;padding:0 14px 28px}
       <button id="next" aria-label="Palabra siguiente">›</button>
     </div>
   </section>
-  <section id="fam" hidden>
-    <p class="hint">Grabe cada palabra con su voz, despacio y claro. Para parar, toque otra vez. Si no graba una palabra, la app usa una voz del aparato.</p>
-    <div id="famList"></div>
+  <section id="mng" hidden>
+    <div class="form">
+      <h2>Agregar palabra</h2>
+      <input type="text" id="nw" placeholder="Escriba la palabra" autocomplete="off" aria-label="Palabra nueva">
+      <img class="prev" id="nwPrev" alt="" hidden>
+      <button class="btn" id="nwPhoto" style="background:var(--blue)">📷 Foto (cámara o galería)</button>
+      <button class="btn" id="nwRec" style="background:#d4503f">🎤 Grabar mi voz</button>
+      <div class="hint" id="nwVoice"></div>
+      <button class="btn" id="nwSave" style="background:#2f8f56;font-size:1.2rem">Guardar palabra</button>
+      <div class="msg" id="nwMsg" aria-live="polite"></div>
+    </div>
+    <p class="hint">Palabras guardadas. Las fotos y grabaciones se quedan solo en este aparato.</p>
+    <div id="list"></div>
   </section>
 </main>
+<input type="file" id="file" accept="image/*" hidden>
 <script>
-var WORDS=[{w:'mamá',e:'👩'},{w:'papá',e:'👨'},{w:'dame',e:'🤲'},{w:'ayuda',e:'🙋'}];
-var i=0,stars=0,attempt={},recorder=null;
+var DEF=[{id:'mamá',w:'mamá',e:'👩'},{id:'papá',w:'papá',e:'👨'},{id:'dame',w:'dame',e:'🤲'},{id:'ayuda',w:'ayuda',e:'🙋'}];
 var $=function(id){return document.getElementById(id)};
 function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function save(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function del(k){try{localStorage.removeItem(k)}catch(e){}}
+var words;
+try{words=JSON.parse(load('palabras')||'null')}catch(e){words=null}
+if(!words||!words.length)words=DEF.slice();
+function saveWords(){return save('palabras',JSON.stringify(words))}
+var i=0,stars=0,attempt={},recorder=null,nwPhoto=null,nwVoice=null,photoTarget=null;
 function say(t){$('msg').textContent=t}
-function speak(w){
-  var d=load('voz:'+w);
+function speak(x){
+  var d=load('voz:'+x.id);
   if(d){new Audio(d).play();return}
-  try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(w);u.lang='es-MX';u.rate=.7;speechSynthesis.speak(u)}catch(e){say('Este aparato no puede hablar. Grabe la voz en la otra pestaña.')}
+  try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(x.w);u.lang='es-MX';u.rate=.7;speechSynthesis.speak(u)}catch(e){say('Este aparato no puede hablar. Grabe la voz en la pestaña Palabras.')}
 }
-function record(onDone,onStart){
+function record(onDone,onStart,onErr){
   if(recorder){recorder.stop();return}
-  if(!navigator.mediaDevices||!window.MediaRecorder){say('Este navegador no permite grabar.');return}
+  if(!navigator.mediaDevices||!window.MediaRecorder){onErr('Este navegador no permite grabar.');return}
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(s){
     var ch=[];recorder=new MediaRecorder(s);
     recorder.ondataavailable=function(e){ch.push(e.data)};
@@ -89,45 +112,103 @@ function record(onDone,onStart){
     };
     recorder.start();onStart();
     setTimeout(function(){if(recorder)recorder.stop()},6000);
-  }).catch(function(){say('No se pudo usar el micrófono. Revise el permiso del navegador.')});
+  }).catch(function(){onErr('No se pudo usar el micrófono. Revise el permiso del navegador.')});
+}
+function resize(file,cb){
+  var u=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){
+    var m=480,s=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');
+    c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    URL.revokeObjectURL(u);cb(c.toDataURL('image/jpeg',.75));
+  };
+  im.onerror=function(){cb(null)};im.src=u;
+}
+function pic(x){
+  var p=$('pic');p.innerHTML='';
+  if(x.photo){var im=document.createElement('img');im.className='photo';im.alt=x.w;im.src=x.photo;p.appendChild(im)}
+  else{var d=document.createElement('div');d.className='emoji';d.textContent=x.e||'🔤';p.appendChild(d)}
 }
 function show(){
-  var x=WORDS[i];$('emoji').textContent=x.e;$('word').textContent=x.w;
-  $('bMine').hidden=!attempt[x.w];$('stars').textContent='⭐'.repeat(stars);say('');
+  if(i>=words.length)i=0;
+  var x=words[i];pic(x);$('word').textContent=x.w;
+  $('bMine').hidden=!attempt[x.id];$('stars').textContent='⭐'.repeat(stars);say('');
 }
-$('bListen').onclick=function(){speak(WORDS[i].w)};
+$('bListen').onclick=function(){speak(words[i])};
 $('bRec').onclick=function(){
-  var b=$('bRec'),w=WORDS[i].w;
+  var b=$('bRec'),id=words[i].id;
   record(function(d){
-    b.classList.remove('on');b.textContent='Decirlo yo';attempt[w]=d;
+    b.classList.remove('on');b.textContent='Decirlo yo';attempt[id]=d;
     stars=Math.min(stars+1,12);show();say('¡Muy bien! Lo intentaste.');
-  },function(){b.classList.add('on');b.textContent='Escuchando… toque para parar';say('')});
+  },function(){b.classList.add('on');b.textContent='Escuchando… toque para parar';say('')},
+  function(m){b.classList.remove('on');b.textContent='Decirlo yo';say(m)});
 };
-$('bMine').onclick=function(){var d=attempt[WORDS[i].w];if(d)new Audio(d).play()};
-$('prev').onclick=function(){i=(i+WORDS.length-1)%WORDS.length;show()};
-$('next').onclick=function(){i=(i+1)%WORDS.length;show()};
+$('bMine').onclick=function(){var d=attempt[words[i].id];if(d)new Audio(d).play()};
+$('prev').onclick=function(){i=(i+words.length-1)%words.length;show()};
+$('next').onclick=function(){i=(i+1)%words.length;show()};
 function tab(p){
-  $('play').hidden=!p;$('fam').hidden=p;
-  $('tPlay').setAttribute('aria-pressed',p);$('tFam').setAttribute('aria-pressed',!p);
-  if(!p)famList();
+  $('play').hidden=!p;$('mng').hidden=p;
+  $('tPlay').setAttribute('aria-pressed',p);$('tMng').setAttribute('aria-pressed',!p);
+  if(p)show();else renderList();
 }
 $('tPlay').onclick=function(){tab(true)};
-$('tFam').onclick=function(){tab(false)};
-function famList(){
-  var box=$('famList');box.innerHTML='';
-  WORDS.forEach(function(x){
-    var r=document.createElement('div');r.className='fam';
-    r.innerHTML='<span class="t">'+x.e+' '+x.w+'</span>'+(load('voz:'+x.w)?'<span class="ok" title="Grabada">✓</span>':'');
-    var p=document.createElement('button');p.textContent='Oír';p.style.background='#2f7fd1';p.onclick=function(){speak(x.w)};
-    var g=document.createElement('button');g.textContent='Grabar';g.style.background='#ef6f5e';
-    g.onclick=function(){
-      record(function(d){
-        g.textContent='Grabar';
-        if(!save('voz:'+x.w,d))say('No se pudo guardar la grabación.');
-        famList();
-      },function(){g.textContent='Parar'});
-    };
-    r.appendChild(p);r.appendChild(g);box.appendChild(r);
+$('tMng').onclick=function(){tab(false)};
+
+$('file').onchange=function(e){
+  var f=e.target.files[0];e.target.value='';if(!f)return;
+  resize(f,function(d){
+    if(!d){$('nwMsg').textContent='No se pudo leer la foto.';return}
+    if(photoTarget==='new'){nwPhoto=d;$('nwPrev').src=d;$('nwPrev').hidden=false}
+    else{
+      var x=words.filter(function(w){return w.id===photoTarget})[0];
+      if(x){var old=x.photo;x.photo=d;if(!saveWords()){x.photo=old;$('nwMsg').textContent='No hay espacio para la foto. Borre alguna palabra.'}renderList()}
+    }
+  });
+};
+$('nwPhoto').onclick=function(){photoTarget='new';$('file').click()};
+$('nwRec').onclick=function(){
+  var b=$('nwRec');
+  record(function(d){b.textContent='🎤 Grabar mi voz';nwVoice=d;$('nwVoice').textContent='✓ Voz grabada'},
+  function(){b.textContent='⏹ Parar'},
+  function(m){b.textContent='🎤 Grabar mi voz';$('nwMsg').textContent=m});
+};
+$('nwSave').onclick=function(){
+  var t=$('nw').value.trim();
+  if(!t){$('nwMsg').textContent='Escriba la palabra primero.';return}
+  var x={id:'w'+Date.now(),w:t,e:'🔤',photo:nwPhoto||null};
+  words.push(x);
+  if(!saveWords()||(nwVoice&&!save('voz:'+x.id,nwVoice))){
+    words.pop();del('voz:'+x.id);saveWords();
+    $('nwMsg').textContent='No hay espacio. Borre alguna palabra o foto.';return;
+  }
+  $('nw').value='';nwPhoto=null;nwVoice=null;$('nwPrev').hidden=true;$('nwVoice').textContent='';
+  $('nwMsg').textContent='✓ Palabra guardada';renderList();
+};
+function renderList(){
+  var box=$('list');box.innerHTML='';
+  words.forEach(function(x){
+    var r=document.createElement('div');r.className='item';
+    var th;
+    if(x.photo){th=document.createElement('img');th.className='th';th.alt='';th.src=x.photo}
+    else{th=document.createElement('div');th.className='th';th.textContent=x.e||'🔤'}
+    var t=document.createElement('span');t.className='t';t.textContent=x.w;
+    r.appendChild(th);r.appendChild(t);
+    if(load('voz:'+x.id)){var o=document.createElement('span');o.className='ok';o.textContent='✓ voz';r.appendChild(o)}
+    var a=document.createElement('div');a.className='acts';
+    function mk(txt,bg,fn){var b=document.createElement('button');b.className='btn';b.textContent=txt;b.style.background=bg;b.onclick=function(){fn(b)};a.appendChild(b)}
+    mk('Oír','#2f7fd1',function(){speak(x)});
+    mk('Voz','#d4503f',function(b){
+      record(function(d){if(!save('voz:'+x.id,d))$('nwMsg').textContent='No hay espacio para la grabación.';renderList()},
+      function(){b.textContent='Parar'},function(m){b.textContent='Voz';$('nwMsg').textContent=m});
+    });
+    mk('Foto','#6b5bd6',function(){photoTarget=x.id;$('file').click()});
+    mk('Borrar','#7a8794',function(){
+      if(!confirm('¿Borrar "'+x.w+'"?'))return;
+      words=words.filter(function(w){return w.id!==x.id});del('voz:'+x.id);
+      if(!words.length)words=DEF.slice();
+      saveWords();renderList();
+    });
+    r.appendChild(a);box.appendChild(r);
   });
 }
 show();
